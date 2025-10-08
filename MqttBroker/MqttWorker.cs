@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MqttBroker;
 
-public class MqttWorker : IHostedService
+internal class MqttWorker : IHostedService
 {
     private readonly ILogger<MqttWorker> _logger;
     private readonly HiveMQClient _client;

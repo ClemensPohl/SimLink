@@ -1,17 +1,20 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpcUa.Server;
+using OpcUa.settings;
 
 namespace OpcUa;
 
-public class OpcUaWorker : IHostedService
+internal class OpcUaWorker : IHostedService
 {
     private readonly ILogger<OpcUaWorker> _logger;
     private SimLinkServerApp? _server;
+    private readonly OpcUaSettings _settings;
 
-    public OpcUaWorker(ILogger<OpcUaWorker> logger)
+    public OpcUaWorker(ILogger<OpcUaWorker> logger, OpcUaSettings settings)
     {
         _logger = logger;
+        _settings = settings;
     }
 
 
@@ -21,7 +24,7 @@ public class OpcUaWorker : IHostedService
 
         try
         {
-            _server = new SimLinkServerApp("opc.tcp://localhost:4840/SimLink");
+            _server = new SimLinkServerApp($"{_settings.EndpointUrl}");
 
             await _server.InitializeAsync("SimLink", 4840);
 
