@@ -6,7 +6,7 @@ using TypeInfo = Opc.Ua.TypeInfo;
 
 namespace OpcUa.server;
 
-internal class CncNodeManager : CustomNodeManager2
+internal class CncNodeManager : CustomNodeManager2, IDisposable
 {
     private readonly CncMachine _machine;
     private readonly Dictionary<string, BaseDataVariableState> _varMap = new();
@@ -15,6 +15,12 @@ internal class CncNodeManager : CustomNodeManager2
     {
         SystemContext.NodeIdFactory = this;
         _machine = new CncMachine();
+        _machine.MachineStateChanged += RefreshVariables;
+    }
+
+    void IDisposable.Dispose()
+    {
+        _machine.MachineStateChanged -= RefreshVariables;
     }
 
     public override void CreateAddressSpace(IDictionary<NodeId, IList<IReference>> externalReferences)

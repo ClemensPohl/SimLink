@@ -11,8 +11,16 @@ public class CncMachine
     private string ProductionSegment { get; set; } = "Aerospace Components";
     private string ProductionLine { get; set; } = "5-Axis Machining Cell C";
 
+    public double SpindleSpeed { get; set; } = 12000;
+
     public MachinePhase Phase { get; set; } = MachinePhase.Roughing;
     public MachineStatus Status { get; set; } = MachineStatus.Running;
+
+
+    // Continuous Update Data
+    private CancellationTokenSource? _cancellationTokenSource;
+    private Task? _updateTask;
+    public event Action? MachineStateChanged;
 
     public void StartMachine()
     {
@@ -25,13 +33,28 @@ public class CncMachine
             return;
 
         Status = MachineStatus.Stopped;
+
+        _cancellationTokenSource = new CancellationTokenSource();
+        var token = _cancellationTokenSource.Token;
+        _updateTask = Task.Run(() => Update(token));
     }
-    
+
     public void EnterMaintainanceMode()
     {
         if (Status == MachineStatus.Stopped)
             return;
 
         Status = MachineStatus.Maintenance;
+    }
+    
+    private async Task Update(CancellationToken token)
+    {
+        var rand = new Random();
+        while (!token.IsCancellationRequested)
+        {
+            SpindleSpeed = Math.Max(0, SpindleSpeed + rand.Next(-500, 500));
+            await Task.Delay(1000, token);
+            MachineStateChanged?.Invoke();
+        }
     }
 }
