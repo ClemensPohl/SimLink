@@ -1,0 +1,24 @@
+networks:
+  adm_live_demo:
+    external: true # Use an existing external network (always use that)
+
+services:
+  mqtt:
+    image: hivemq/hivemq4:dns-latest
+    container_name: mqtt_broker
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "8080:8080"
+      - "8883:8883" # Mqtt over ssl port
+    volumes:
+      - ./hivemq-data:/opts/hivemq/data
+    networks:
+      - adm_live_demo
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "10m"
+          max-file: "3"
+
+# redis
