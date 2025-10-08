@@ -14,7 +14,7 @@ public class CncMachine
     public double SpindleSpeed { get; set; } = 12000;
 
     public MachinePhase Phase { get; set; } = MachinePhase.Roughing;
-    public MachineStatus Status { get; set; } = MachineStatus.Running;
+    public MachineStatus Status { get; set; } = MachineStatus.Stopped;
 
 
     // Continuous Update Data

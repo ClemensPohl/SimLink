@@ -26,7 +26,7 @@ internal class SimLinkServer : StandardServer
 
     protected override ServerProperties LoadServerProperties() => new()
     {
-        ManufacturerName = "PohlCorp",
+        ManufacturerName = "Pohl-Industries",
         ProductName = "SimLink",
         ProductUri = "uri",
         SoftwareVersion = Utils.GetAssemblySoftwareVersion(),
@@ -40,21 +40,19 @@ internal class SimLinkServer : StandardServer
 /// </summary>
 internal class SimLinkServerApp
 {
-    private readonly string _serverUri;
     private readonly string _basePath;
     private readonly string _endpointUri;
 
     private ApplicationInstance? _application;
     private SimLinkServer? _server;
 
-    public SimLinkServerApp(string serverUri, string basePath = "pki", string endpointUri = "opc.tcp://localhost:4840")
+    public SimLinkServerApp(string endpointUri, string basePath = "pki")
     {
-        _serverUri = serverUri;
         _basePath = Path.Combine(AppContext.BaseDirectory, basePath);
         _endpointUri = endpointUri;
     }
 
-    public async Task InitializeAsync(string appName, int port)
+    public async Task InitializeAsync(string appName)
     {
         CreatePkiDirectories();
 
@@ -85,7 +83,7 @@ internal class SimLinkServerApp
         await config.ValidateAsync(ApplicationType.Server);
         EnsureCertificate(config);
 
-        _server = new SimLinkServer(_serverUri);
+        _server = new SimLinkServer(_endpointUri);
     }
 
     public async Task StartAsync()

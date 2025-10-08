@@ -24,9 +24,9 @@ internal class OpcUaWorker : IHostedService
 
         try
         {
-            _server = new SimLinkServerApp($"{_settings.EndpointUrl}");
+            _server = new SimLinkServerApp($"{_settings.BaseUrl}/{_settings.Port}/{_settings.AppName}");
 
-            await _server.InitializeAsync("SimLink", 4840);
+            await _server.InitializeAsync(_settings.AppName);
 
             await _server.StartAsync();
 
