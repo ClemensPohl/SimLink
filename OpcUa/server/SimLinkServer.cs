@@ -2,23 +2,24 @@ using Opc.Ua;
 using Opc.Ua.Configuration;
 using Opc.Ua.Server;
 using OpcUa.server;
+using OpcUa.settings;
 
 namespace OpcUa.Server;
 
 internal class SimLinkServer : StandardServer
 {
-    private readonly string _serverUri;
+    private readonly OpcUaSettings _settings;
 
-    public SimLinkServer(string serverUri)
+    public SimLinkServer(OpcUaSettings settings)
     {
-        _serverUri = serverUri;
+        _settings = settings;
     }
 
     protected override MasterNodeManager CreateMasterNodeManager(IServerInternal server, ApplicationConfiguration configuration)
     {
         var nodeManagers = new List<INodeManager>
         {
-            new CncNodeManager(server, configuration, _serverUri)
+            new CncNodeManager(server, configuration, $"{_settings.BaseUrl}/{_settings.Port}/{_settings.AppName}")
         };
 
         return new MasterNodeManager(server, configuration, null, [.. nodeManagers]);
@@ -40,64 +41,51 @@ internal class SimLinkServer : StandardServer
 /// </summary>
 internal class SimLinkServerApp
 {
-    private readonly string _basePath;
-    private readonly string _endpointUri;
+    private readonly SimLinkServer _server;
+    private readonly OpcUaSettings _settings;
 
-    private ApplicationInstance? _application;
-    private SimLinkServer? _server;
-
-    public SimLinkServerApp(string endpointUri, string basePath = "pki")
+    public SimLinkServerApp(SimLinkServer server, OpcUaSettings settings)
     {
-        _basePath = Path.Combine(AppContext.BaseDirectory, basePath);
-        _endpointUri = endpointUri;
+        _server = server;
+        _settings = settings;
     }
 
-    public async Task InitializeAsync(string appName)
-    {
-        CreatePkiDirectories();
 
+    private ApplicationInstance? _application;
+
+    private async Task InitializeAsync()
+    {
         _application = new ApplicationInstance
         {
-            ApplicationName = appName,
+            ApplicationName = _settings.AppName,
             ApplicationType = ApplicationType.Server
         };
 
         var config = new ApplicationConfiguration
         {
-            ApplicationName = appName,
-            ApplicationUri = $"urn:localhost:{appName}",
+            ApplicationName = _settings.AppName,
+            ApplicationUri = $"urn:localhost:{_settings.AppName}",
             ApplicationType = ApplicationType.Server,
             SecurityConfiguration = BuildSecurityConfig(),
-            ServerConfiguration = BuildServerConfig(_endpointUri),
+            ServerConfiguration = BuildServerConfig($"{_settings.BaseUrl}/{_settings.Port}/{_settings.AppName}"),
             TransportQuotas = new TransportQuotas { OperationTimeout = 15000 },
-            TraceConfiguration = new TraceConfiguration
-            {
-                OutputFilePath = Path.Combine(AppContext.BaseDirectory, "logs", "opcua.log"),
-                DeleteOnLoad = false,
-                TraceMasks = 0
-            }
+            TraceConfiguration = new TraceConfiguration()
         };
 
         _application.ApplicationConfiguration = config;
 
         await config.ValidateAsync(ApplicationType.Server);
         EnsureCertificate(config);
-
-        _server = new SimLinkServer(_endpointUri);
     }
 
     public async Task StartAsync()
     {
-        if (_application == null || _server == null)
+        await InitializeAsync();
+
+        if (_application == null)
             throw new InvalidOperationException("Server not initialized. Call InitializeAsync first.");
-
+            
         var cfg = _application.ApplicationConfiguration.SecurityConfiguration;
-
-        EnsureDirectory(cfg.ApplicationCertificate.StorePath);
-        EnsureDirectory(cfg.TrustedPeerCertificates.StorePath);
-        EnsureDirectory(cfg.TrustedIssuerCertificates.StorePath);
-        EnsureDirectory(cfg.RejectedCertificateStore.StorePath);
-        EnsureDirectory(Path.GetDirectoryName(_application.ApplicationConfiguration.TraceConfiguration.OutputFilePath));
 
         bool haveCert = await _application.CheckApplicationInstanceCertificatesAsync(false, 0);
         if (!haveCert)
@@ -108,56 +96,40 @@ internal class SimLinkServerApp
 
     public void Stop()
     {
-        _server?.Stop();
-        _server = null;
+        _server.Stop();
     }
 
-    private void CreatePkiDirectories()
+    private SecurityConfiguration BuildSecurityConfig()
     {
-        var dirs = new[]
+        string basePath = AppContext.BaseDirectory;
+
+        return new SecurityConfiguration
         {
-            Path.Combine(_basePath, "own"),
-            Path.Combine(_basePath, "trusted"),
-            Path.Combine(_basePath, "issuers"),
-            Path.Combine(_basePath, "rejected")
+            ApplicationCertificate = new CertificateIdentifier
+            {
+                StoreType = "Directory",
+                StorePath = Path.Combine(basePath, "own"),
+                SubjectName = "CN=CNC OPC UA Server, O=Demo, DC=localhost"
+            },
+            TrustedPeerCertificates = new CertificateTrustList
+            {
+                StoreType = "Directory",
+                StorePath = Path.Combine(basePath, "trusted")
+            },
+            TrustedIssuerCertificates = new CertificateTrustList
+            {
+                StoreType = "Directory",
+                StorePath = Path.Combine(basePath, "issuers")
+            },
+            RejectedCertificateStore = new CertificateTrustList
+            {
+                StoreType = "Directory",
+                StorePath = Path.Combine(basePath, "rejected")
+            },
+            AutoAcceptUntrustedCertificates = true,
+            RejectSHA1SignedCertificates = false
         };
-
-        foreach (var dir in dirs)
-            Directory.CreateDirectory(dir);
     }
-
-    private static void EnsureDirectory(string? path)
-    {
-        if (!string.IsNullOrEmpty(path))
-            Directory.CreateDirectory(path);
-    }
-
-    private SecurityConfiguration BuildSecurityConfig() => new()
-    {
-        ApplicationCertificate = new CertificateIdentifier
-        {
-            StoreType = "Directory",
-            StorePath = Path.Combine(_basePath, "own"),
-            SubjectName = "CN=CNC OPC UA Server, O=Demo, DC=localhost"
-        },
-        TrustedPeerCertificates = new CertificateTrustList
-        {
-            StoreType = "Directory",
-            StorePath = Path.Combine(_basePath, "trusted")
-        },
-        TrustedIssuerCertificates = new CertificateTrustList
-        {
-            StoreType = "Directory",
-            StorePath = Path.Combine(_basePath, "issuers")
-        },
-        RejectedCertificateStore = new CertificateTrustList
-        {
-            StoreType = "Directory",
-            StorePath = Path.Combine(_basePath, "rejected")
-        },
-        AutoAcceptUntrustedCertificates = true,
-        RejectSHA1SignedCertificates = false
-    };
 
     private static ServerConfiguration BuildServerConfig(string endpointUri) => new()
     {

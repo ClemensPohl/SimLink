@@ -8,13 +8,12 @@ namespace OpcUa;
 internal class OpcUaWorker : IHostedService
 {
     private readonly ILogger<OpcUaWorker> _logger;
-    private SimLinkServerApp? _server;
-    private readonly OpcUaSettings _settings;
+    private readonly SimLinkServerApp _server;
 
-    public OpcUaWorker(ILogger<OpcUaWorker> logger, OpcUaSettings settings)
+    public OpcUaWorker(ILogger<OpcUaWorker> logger, SimLinkServerApp server)
     {
         _logger = logger;
-        _settings = settings;
+        _server = server;
     }
 
 
@@ -24,12 +23,7 @@ internal class OpcUaWorker : IHostedService
 
         try
         {
-            _server = new SimLinkServerApp($"{_settings.BaseUrl}/{_settings.Port}/{_settings.AppName}");
-
-            await _server.InitializeAsync(_settings.AppName);
-
             await _server.StartAsync();
-
             _logger.LogInformation("Server started");
         }
         catch (Exception e)

@@ -10,6 +10,8 @@ docker network create adm_live_demo
 ```
 docker compose up -d
 ```
+3) run StartupApp "SimLink" as c# project
+  -> this will run the ocpua server, create a hivemq client instance and publish opcua state
 
 ## docker compose file
 

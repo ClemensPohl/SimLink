@@ -25,6 +25,10 @@ public class CncMachine
     public void StartMachine()
     {
         Status = MachineStatus.Running;
+
+        _cancellationTokenSource = new CancellationTokenSource();
+        var token = _cancellationTokenSource.Token;
+        _updateTask = Task.Run(() => Update(token));
     }
 
     public void StopMachine()
@@ -33,10 +37,6 @@ public class CncMachine
             return;
 
         Status = MachineStatus.Stopped;
-
-        _cancellationTokenSource = new CancellationTokenSource();
-        var token = _cancellationTokenSource.Token;
-        _updateTask = Task.Run(() => Update(token));
     }
 
     public void EnterMaintainanceMode()
