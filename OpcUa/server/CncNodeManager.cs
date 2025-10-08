@@ -1,6 +1,7 @@
 using System.Reflection;
 using Opc.Ua;
 using Opc.Ua.Server;
+using OpcUa.machines;
 using TypeInfo = Opc.Ua.TypeInfo;
 
 namespace OpcUa.server;
@@ -45,6 +46,12 @@ internal class CncNodeManager : CustomNodeManager2
         // Reflect over properties
         foreach (var prop in source.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
+            // enum to text conversion:
+            var val = prop.GetValue(source);
+            var isEnum = prop.PropertyType.IsEnum;
+            var dataTypeId = isEnum ? DataTypeIds.String : TypeInfo.GetDataTypeId(prop.PropertyType);
+            var displayValue = isEnum ? val?.ToString() : val;
+
             var nodeId = new NodeId($"{parent.SymbolicName}.{prop.Name}", ns);
 
             var variable = new BaseDataVariableState(parent)
@@ -53,8 +60,8 @@ internal class CncNodeManager : CustomNodeManager2
                 NodeId = nodeId,
                 BrowseName = new QualifiedName(prop.Name, ns),
                 DisplayName = prop.Name,
-                DataType = TypeInfo.GetDataTypeId(prop.PropertyType),
-                Value = prop.GetValue(source),
+                DataType = dataTypeId,
+                Value = displayValue,
                 AccessLevel = AccessLevels.CurrentReadOrWrite,
                 UserAccessLevel = AccessLevels.CurrentReadOrWrite,
                 ValueRank = ValueRanks.Scalar,
@@ -64,9 +71,28 @@ internal class CncNodeManager : CustomNodeManager2
 
             // Handle writes from client → update object
             variable.OnSimpleWriteValue = delegate (ISystemContext context, NodeState node, ref object value)
+
             {
-                prop.SetValue(source, value);
-                variable.Value = value;
+                 if(val == null)
+                     return StatusCodes.BadTypeMismatch;
+
+                 object newValue = val;
+
+                if (isEnum)
+                {
+                    try
+                    {
+#pragma warning disable CS8604 // Possible null reference argument.
+                        newValue = Enum.Parse(prop.PropertyType, value.ToString(), ignoreCase: true);
+#pragma warning restore CS8604 // Possible null reference argument.
+                    }
+                    catch
+                    {
+                        return StatusCodes.BadTypeMismatch;
+                    }
+                }
+                prop.SetValue(source, newValue);
+                variable.Value = isEnum ? newValue.ToString() : newValue;
                 variable.Timestamp = DateTime.UtcNow;
                 variable.ClearChangeMasks(SystemContext, false);
                 return ServiceResult.Good;
@@ -111,12 +137,18 @@ internal class CncNodeManager : CustomNodeManager2
         var ctx = SystemContext;
         foreach (var kv in _varMap)
         {
-            var prop = _machine.GetType().GetProperty(kv.Key)!;
-            kv.Value.Value = prop.GetValue(_machine);
+            var prop = _machine.GetType().GetProperty(kv.Key);
+            if (prop == null)
+                continue;
+
+            var value = prop.GetValue(_machine);
+            var isEnum = prop.PropertyType.IsEnum;
+            kv.Value.Value = isEnum ? value?.ToString() : value;
             kv.Value.Timestamp = DateTime.UtcNow;
             kv.Value.ClearChangeMasks(ctx, false);
         }
     }
+
     
 
 }
