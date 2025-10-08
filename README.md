@@ -13,6 +13,21 @@ docker compose up -d
 3) run StartupApp "SimLink" as c# project
   -> this will run the ocpua server, create a hivemq client instance and publish opcua state
 
+# MQTT-Topic Design
+```
+pohl-industries/
+  {plant}/
+    machines/
+      {serial-number}/
+        telemetry/
+        command/
+          +StartMachine()
+          +StopMachine()
+          ...
+```
+
+
+
 ## docker compose file
 
 services:

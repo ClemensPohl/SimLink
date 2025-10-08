@@ -9,7 +9,7 @@ namespace OpcUa.server;
 internal class CncNodeManager : CustomNodeManager2, IDisposable
 {
     private readonly CncMachine _machine;
-    private readonly Dictionary<string, BaseDataVariableState> _varMap = new();
+    private readonly Dictionary<string, BaseDataVariableState> _varMap = [];
     public CncNodeManager(IServerInternal server, ApplicationConfiguration config, string namespaceUri) :
         base(server, config, namespaceUri)
     {
