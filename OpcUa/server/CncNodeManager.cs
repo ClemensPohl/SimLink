@@ -8,19 +8,26 @@ namespace OpcUa.server;
 
 internal class CncNodeManager : CustomNodeManager2, IDisposable
 {
-    private readonly CncMachine _machine;
+    private readonly IEnumerable<CncMachine> _machines;
     private readonly Dictionary<string, BaseDataVariableState> _varMap = [];
-    public CncNodeManager(IServerInternal server, ApplicationConfiguration config, string namespaceUri) :
+    public CncNodeManager(IServerInternal server, ApplicationConfiguration config, string namespaceUri, IEnumerable<CncMachine> machines) :
         base(server, config, namespaceUri)
     {
         SystemContext.NodeIdFactory = this;
-        _machine = new CncMachine();
-        _machine.MachineStateChanged += RefreshVariables;
+        _machines = machines;
+
+        foreach(var machine in _machines)
+        {
+            machine.MachineStateChanged += RefreshVariables;
+        }
     }
 
     void IDisposable.Dispose()
     {
-        _machine.MachineStateChanged -= RefreshVariables;
+        foreach(var machine in _machines)
+        {
+            machine.MachineStateChanged -= RefreshVariables;
+        }
     }
 
     public override void CreateAddressSpace(IDictionary<NodeId, IList<IReference>> externalReferences)
@@ -44,7 +51,7 @@ internal class CncNodeManager : CustomNodeManager2, IDisposable
 
 
 
-        CreateNodesFromObject(_machine, machinesFolder, ns);
+        CreateNodesFromObject(_machines.First(), machinesFolder, ns);
     }
 
     private void CreateNodesFromObject(object source, BaseObjectState parent, ushort ns)
@@ -143,11 +150,11 @@ internal class CncNodeManager : CustomNodeManager2, IDisposable
         var ctx = SystemContext;
         foreach (var kv in _varMap)
         {
-            var prop = _machine.GetType().GetProperty(kv.Key);
+            var prop = _machines.First().GetType().GetProperty(kv.Key);
             if (prop == null)
                 continue;
 
-            var value = prop.GetValue(_machine);
+            var value = prop.GetValue(_machines.First());
             var isEnum = prop.PropertyType.IsEnum;
             kv.Value.Value = isEnum ? value?.ToString() : value;
             kv.Value.Timestamp = DateTime.UtcNow;

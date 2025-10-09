@@ -1,6 +1,7 @@
 using Opc.Ua;
 using Opc.Ua.Configuration;
 using Opc.Ua.Server;
+using OpcUa.machines;
 using OpcUa.server;
 using OpcUa.settings;
 
@@ -9,17 +10,19 @@ namespace OpcUa.Server;
 internal class SimLinkServer : StandardServer
 {
     private readonly OpcUaSettings _settings;
+    private readonly IEnumerable<CncMachine> _machines;
 
-    public SimLinkServer(OpcUaSettings settings)
+    public SimLinkServer(OpcUaSettings settings, IEnumerable<CncMachine> machines)
     {
         _settings = settings;
+        _machines = machines;
     }
 
     protected override MasterNodeManager CreateMasterNodeManager(IServerInternal server, ApplicationConfiguration configuration)
     {
         var nodeManagers = new List<INodeManager>
         {
-            new CncNodeManager(server, configuration, $"{_settings.BaseUrl}/{_settings.Port}/{_settings.AppName}")
+            new CncNodeManager(server, configuration, $"{_settings.BaseUrl}/{_settings.Port}/{_settings.AppName}", _machines)
         };
 
         return new MasterNodeManager(server, configuration, null, [.. nodeManagers]);

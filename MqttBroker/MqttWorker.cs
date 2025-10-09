@@ -1,6 +1,7 @@
 ﻿using HiveMQtt.Client;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MqttBroker.Services;
 
 namespace MqttBroker;
 
@@ -9,10 +10,13 @@ internal class MqttWorker : IHostedService
     private readonly ILogger<MqttWorker> _logger;
     private readonly HiveMQClient _client;
 
-    public MqttWorker(HiveMQClient client, ILogger<MqttWorker> logger)
+    private readonly OpcAgent _opcAgent;
+
+    public MqttWorker(HiveMQClient client, ILogger<MqttWorker> logger, OpcAgent opcAgent    )
     {
         _client = client;
         _logger = logger;
+        _opcAgent = opcAgent;
 
     }
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -21,6 +25,8 @@ internal class MqttWorker : IHostedService
         {
             await _client.ConnectAsync();
             _logger.LogInformation("Client connected sucessfully");
+
+            await _opcAgent.PublishMachinesAsync(cancellationToken);
         }
         catch (Exception e)
         {

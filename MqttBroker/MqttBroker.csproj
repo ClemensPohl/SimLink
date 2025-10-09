@@ -17,4 +17,7 @@
   <ItemGroup>
     <PackageReference Include="HiveMQtt" Version="0.28.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OpcUa\OpcUa.csproj" />
+  </ItemGroup>
 </Project>

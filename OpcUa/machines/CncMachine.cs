@@ -7,7 +7,7 @@ public class CncMachine
     // Static data unchanged during runtime
     public string Name { get; set; } = "PrecisionCraft VMC-850 #3";
     public string Plant { get; set; } = "PlantA";
-    private string SerialNumber { get; set; } = "VMC850-2023-003";
+    public string SerialNumber { get; set; } = "VMC850-2023-003";
     private string ProductionSegment { get; set; } = "Aerospace Components";
     private string ProductionLine { get; set; } = "5-Axis Machining Cell C";
 

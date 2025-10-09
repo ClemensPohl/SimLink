@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using HiveMQtt.Client;
 using HiveMQtt.Client.Options;
 using MqttBroker.Settings;
+using MqttBroker.Services;
 
 namespace MqttBroker;
 
@@ -27,6 +28,8 @@ public static class MqttExtensions
             };
             return new HiveMQClient(options);
         });
+
+        services.AddSingleton<OpcAgent>();
 
         services.AddHostedService<MqttWorker>();
         
