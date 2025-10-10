@@ -22,3 +22,36 @@ services:
           max-file: "3"
 
 # redis
+  redis:
+    image: redis/redis-stack:latest
+    container_name: redis_container
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+      - "8001:8001"  # RedisInsight port
+    volumes:
+      - ./redis-data:/data
+    networks:
+      - adm_live_demo
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "10m"
+          max-file: "3"
+
+  redis_hydration:
+    image: docker.redpanda.com/redpandadata/connect:latest
+    container_name: redis_hydration
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      - mqtt
+      - redis
+    networks:
+      - adm_live_demo
+    volumes:
+      - ./redis_hydration.yaml:/connect.yaml

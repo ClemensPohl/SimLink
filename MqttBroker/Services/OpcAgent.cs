@@ -24,10 +24,10 @@ public class OpcAgent
         {
             try
             {
-                // 🔹 Publish initial snapshot right away
+                // Publish initial snapshot right away
                 await PublishSnapshotAsync(cncMachine, cancellationToken);
 
-                // 🔹 Subscribe to further changes
+                // Subscribe to further changes
                 cncMachine.MachineStateChanged += async () =>
                 {
                     await PublishSnapshotAsync(cncMachine, cancellationToken);

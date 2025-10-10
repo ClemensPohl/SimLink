@@ -1,0 +1,34 @@
+input:
+  label: "mqtt_in"
+  mqtt:
+    urls:
+      - "mqtt://mqtt_broker:1883"
+    client_id: "redis-hydration-18e694e4-6eb7-4298-bc60-f3553b151885"
+    keepalive: 60
+    clean_session: true
+    topics:
+      - "pohl-industries/+/machines/+/telemetry"
+
+pipeline:
+  processors:
+    # Extract metadata from the topic
+    - bloblang: |
+        root = {
+          "topic": meta("mqtt_topic"),
+          "payload": this
+        }
+        root.plant = meta("mqtt_topic").split("/")[1]
+        root.machine = meta("mqtt_topic").split("/")[3]
+        root.key = "machine:" + root.plant + ":" + root.machine
+        root.data = this
+    # Optional: flatten JSON if needed
+    - bloblang: |
+        root = this.data
+
+output:
+  label: "redis_out"
+  redis_hash:
+    url: "redis://redis_container:6379"
+    key: ${! json("key") }
+    walk_metadata: false
+    walk_json_object: true
