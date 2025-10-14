@@ -1,7 +1,7 @@
-using System.Text.Json;
 using HiveMQtt.Client;
 using Microsoft.Extensions.Logging;
 using OpcUa.machines;
+using System.Text.Json;
 
 namespace MqttBroker.Services;
 
@@ -42,33 +42,49 @@ public class OpcAgent
 
     private async Task PublishSnapshotAsync(CncMachine cncMachine, CancellationToken token)
     {
-        var topic = $"pohl-industries/{cncMachine.Plant}/machines/{cncMachine.SerialNumber}/telemetry";
+        string baseTopic = $"pohl-industries/{cncMachine.Plant}/machines/{cncMachine.SerialNumber}/telemetry";
 
-        var payloadObj = new
+        var metrics = new Dictionary<string, object?>
         {
-            timestamp = DateTime.UtcNow,
-            name = cncMachine.Name,
-            plant = cncMachine.Plant,
-            serialNumber = cncMachine.SerialNumber,
-            phase = cncMachine.Phase.ToString(),
-            status = cncMachine.Status.ToString(),
-            spindleSpeed = cncMachine.SpindleSpeed
+            // INFO 
+            ["info/serialNumber"] = cncMachine.SerialNumber,
+            ["info/name"] = cncMachine.Name,
+            ["info/plant"] = cncMachine.Plant,
+
+            // RUNTIME
+            ["runtime/spindleSpeed"] = cncMachine.SpindleSpeed,
+
+            // STATUS
+            ["status/state"] = cncMachine.Status.ToString(),
+            ["status/phase"] = cncMachine.Phase.ToString()
         };
 
-        string payload = JsonSerializer.Serialize(payloadObj, new JsonSerializerOptions
+        foreach (var metric in metrics)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = false
-        });
+            string topic = $"{baseTopic}/{metric.Key}";
 
-        try
-        {
-            await _client.PublishAsync(topic, payload);
-            _logger.LogInformation("Published machine snapshot to {Topic}: {Payload}", topic, payload);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Failed to publish snapshot for machine {Serial}", cncMachine.SerialNumber);
+            // build small JSON payload
+            var payloadObj = new
+            {
+                timestamp = DateTime.UtcNow,
+                value = metric.Value
+            };
+
+            string payload = JsonSerializer.Serialize(payloadObj, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = false
+            });
+
+            try
+            {
+                await _client.PublishAsync(topic, payload);
+                _logger.LogInformation("Published machine snapshot to {Topic}: {Payload}", topic, payload);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "Failed to publish snapshot for machine {Serial}", cncMachine.SerialNumber);
+            }
         }
     }
 }

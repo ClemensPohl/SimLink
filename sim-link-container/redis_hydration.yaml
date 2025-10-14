@@ -7,28 +7,26 @@ input:
     keepalive: 60
     clean_session: true
     topics:
-      - "pohl-industries/+/machines/+/telemetry"
+      - "pohl-industries/+/machines/+/telemetry/#"
 
 pipeline:
   processors:
-    # Extract metadata from the topic
-    - bloblang: |
-        root = {
-          "topic": meta("mqtt_topic"),
-          "payload": this
-        }
-        root.plant = meta("mqtt_topic").split("/")[1]
-        root.machine = meta("mqtt_topic").split("/")[3]
-        root.key = "machine:" + root.plant + ":" + root.machine
-        root.data = this
-    # Optional: flatten JSON if needed
-    - bloblang: |
-        root = this.data
+    - mapping: |
+        root = this
+        let parts = meta("mqtt_topic").split("/")
+        root.field = $parts.index(-1)              
+        meta key = $parts.index(3)                 
+    - mapping: |
+        root = { this.field: this.value.string() }
 
 output:
   label: "redis_out"
   redis_hash:
     url: "redis://redis_container:6379"
-    key: ${! json("key") }
+    key: ${! meta("key") }  
     walk_metadata: false
     walk_json_object: true
+
+logger:
+  level: DEBUG
+  format: logfmt
