@@ -1,7 +1,7 @@
+using MachineDomain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using OpcUa.machines;
 using OpcUa.Server;
 using OpcUa.settings;
 

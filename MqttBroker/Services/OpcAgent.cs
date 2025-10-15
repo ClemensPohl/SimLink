@@ -1,6 +1,6 @@
 using HiveMQtt.Client;
+using MachineDomain;
 using Microsoft.Extensions.Logging;
-using OpcUa.machines;
 using System.Text.Json;
 
 namespace MqttBroker.Services;

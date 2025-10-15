@@ -1,9 +1,7 @@
-namespace OpcUa.machines;
+namespace MachineDomain;
 
 public class CncMachine
 {
-    private string Id { get; } = Guid.NewGuid().ToString();
-
     // Static data unchanged during runtime
     public string Name { get; set; } = "PrecisionCraft VMC-850 #3";
     public string Plant { get; set; } = "PlantA";

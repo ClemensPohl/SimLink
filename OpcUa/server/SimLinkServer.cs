@@ -1,7 +1,7 @@
+using MachineDomain;
 using Opc.Ua;
 using Opc.Ua.Configuration;
 using Opc.Ua.Server;
-using OpcUa.machines;
 using OpcUa.server;
 using OpcUa.settings;
 

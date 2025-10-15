@@ -19,5 +19,8 @@
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Core" Version="1.5.377.21" />
     <PackageReference Include="OPCFoundation.NetStandard.Opc.Ua.Server" Version="1.5.377.21" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MachineDomain\MachineDomain.csproj" />
+  </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-namespace OpcUa.machines;
+namespace MachineDomain;
 
 public enum MachineStatus
 {

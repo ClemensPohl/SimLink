@@ -19,5 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\OpcUa\OpcUa.csproj" />
+     <ProjectReference Include="..\MachineDomain\MachineDomain.csproj" />
   </ItemGroup>
 </Project>

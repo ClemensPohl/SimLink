@@ -1,7 +1,7 @@
 using System.Reflection;
+using MachineDomain;
 using Opc.Ua;
 using Opc.Ua.Server;
-using OpcUa.machines;
 using TypeInfo = Opc.Ua.TypeInfo;
 
 namespace OpcUa.server;
