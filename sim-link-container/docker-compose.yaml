@@ -106,7 +106,7 @@ services:
 
 
 
-  # 💧 MQTT → Kafka Hydration
+  # Kafka Hydration
   kafka_hydration:
     image: docker.redpanda.com/redpandadata/connect:latest
     container_name: kafka_hydration

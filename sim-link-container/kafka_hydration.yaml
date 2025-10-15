@@ -7,27 +7,7 @@ input:
     keepalive: 60
     clean_session: true
     topics:
-      - "pohl-industries/+/machines/+/telemetry/#"
-
-pipeline:
-  processors:
-    - mapping: |
-        root = this
-        let parts = meta("mqtt_topic").split("/")
-        meta field = $parts.index(-1)
-        # Build key as "pohl-industries/{site}/machines/{machine}"
-        meta key = $parts.slice(0,6).join("/")
-
-    - bloblang: |
-        if meta("field") != "state" {
-          root = deleted()
-        }
-
-    - mapping: |
-        root = {
-          "timestamp": this.timestamp.or(now()),
-          "status": this.value
-        }
+      - "pohl-industries/+/machines/+/telemetry/status/state"
 
 output:
   label: "kafka_out"
@@ -35,7 +15,7 @@ output:
     addresses:
       - kafka_broker:9092
     topic: "opcua.machines.status"
-    key: '${! meta("key") }'
+    key: '${! meta("mqtt_topic") }'
     client_id: "mqtt-to-kafka"
     batching:
       count: 50
