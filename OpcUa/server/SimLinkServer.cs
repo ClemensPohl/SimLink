@@ -102,7 +102,7 @@ internal class SimLinkServerApp
         _server.Stop();
     }
 
-    private SecurityConfiguration BuildSecurityConfig()
+    private static SecurityConfiguration BuildSecurityConfig()
     {
         string basePath = AppContext.BaseDirectory;
 

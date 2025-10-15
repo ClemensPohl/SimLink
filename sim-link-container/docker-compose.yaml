@@ -55,3 +55,71 @@ services:
       - adm_live_demo
     volumes:
       - ./redis_hydration.yaml:/connect.yaml
+
+# Kafka message queue
+
+  # kafka broker
+  kafka_broker:
+    container_name: kafka_broker
+    image: docker.redpanda.com/redpandadata/redpanda:latest
+    restart: unless-stopped
+    networks:
+      - adm_live_demo
+    volumes:
+      - ./kafka-data:/var/lib/redpanda/data
+    ports:
+      - "19092:9092"  # Kafka API
+      - "9644:9644"   # Admin API
+    command:
+      - redpanda start
+      - --mode dev-container
+      - --smp 1
+      - --overprovisioned
+      - --check=false
+      - --kafka-addr internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr internal://kafka_broker:9092,external://localhost:19092
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+  # console
+  kafka_console:
+    image: docker.redpanda.com/redpandadata/console:v2.6.1
+    container_name: kafka_console
+    restart: unless-stopped
+    environment:
+      - KAFKA_BROKERS=kafka_broker:9092
+      - REDPANDA_ADMIN_API=http://kafka_broker:9644
+    ports:
+      - "8085:8080"
+    depends_on:
+      - kafka_broker
+    networks:
+      - adm_live_demo
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+
+
+  # 💧 MQTT → Kafka Hydration
+  kafka_hydration:
+    image: docker.redpanda.com/redpandadata/connect:latest
+    container_name: kafka_hydration
+    restart: unless-stopped
+    depends_on:
+      - mqtt
+      - kafka_broker
+    networks:
+      - adm_live_demo
+    volumes:
+      - ./kafka_hydration.yaml:/connect.yaml
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

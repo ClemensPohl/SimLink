@@ -1,0 +1,43 @@
+input:
+  label: "mqtt_in"
+  mqtt:
+    urls:
+      - "mqtt://mqtt_broker:1883"
+    client_id: "kafka-hydration"
+    keepalive: 60
+    clean_session: true
+    topics:
+      - "pohl-industries/+/machines/+/telemetry/#"
+
+pipeline:
+  processors:
+    - mapping: |
+        root = this
+        let parts = meta("mqtt_topic").split("/")
+        meta field = $parts.index(-1)
+
+    - bloblang: |
+        if meta("field") != "state" {
+          root = deleted()
+        }
+
+    - mapping: |
+        root = {
+          "timestamp": this.timestamp,
+          "status": this.value
+        }
+
+output:
+  label: "kafka_out"
+  kafka:
+    addresses:
+      - kafka_broker:9092
+    topic: "opcua.machines.status"
+    client_id: "mqtt-to-kafka"
+    batching:
+      count: 50
+      period: 1s
+
+logger:
+  level: INFO
+  format: logfmt
