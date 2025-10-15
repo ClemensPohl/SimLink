@@ -5,7 +5,8 @@
 
 
 ## Docker files
-./sim-link-container/kafka-data/
+sim-link-container/kafka-data/
+sim-link-container/kafka-data/*.crash
 
 # User-specific files
 *.rsuser
