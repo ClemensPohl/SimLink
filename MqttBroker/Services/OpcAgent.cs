@@ -24,10 +24,8 @@ public class OpcAgent
         {
             try
             {
-                // Publish initial snapshot right away
                 await PublishSnapshotAsync(cncMachine, cancellationToken);
 
-                // Subscribe to further changes
                 cncMachine.MachineStateChanged += async () =>
                 {
                     await PublishSnapshotAsync(cncMachine, cancellationToken);
@@ -63,7 +61,6 @@ public class OpcAgent
         {
             string topic = $"{baseTopic}/{metric.Key}";
 
-            // build small JSON payload
             var payloadObj = new
             {
                 timestamp = DateTime.UtcNow,
@@ -79,7 +76,7 @@ public class OpcAgent
             try
             {
                 await _client.PublishAsync(topic, payload);
-                _logger.LogInformation("Published machine snapshot to {Topic}: {Payload}", topic, payload);
+                _logger.LogInformation("\nPublished machine snapshot to {Topic}: {Payload}\n", topic, payload);
             }
             catch (Exception e)
             {
