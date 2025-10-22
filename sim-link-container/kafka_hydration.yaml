@@ -9,6 +9,27 @@ input:
     topics:
       - "pohl-industries/+/machines/+/telemetry/status/state"
 
+pipeline:
+  processors:
+    - mapping: |
+        root.timestamp = this.timestamp
+        root.machine_status = this.value
+    - branch:
+        request_map: 'root.key = meta("mqtt_topic").split("/").3'
+        processors:
+          - redis:
+              url: "redis://redis_container:6379"
+              command: hmget
+              args_mapping: 'root = [ this.key, "name", "plant", "serialNumber", "spindleSpeed", "phase", "state" ]'
+        result_map: |
+          root.name = this.0
+          root.plant = this.1
+          root.serial_number = this.2
+          root.spindle_speed = this.3
+          root.phase = this.4
+          root.state = this.5
+
+
 output:
   label: "kafka_out"
   kafka:
