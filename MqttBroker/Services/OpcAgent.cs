@@ -50,7 +50,7 @@ public class OpcAgent
             ["info/plant"] = cncMachine.Plant,
 
             // RUNTIME
-            ["runtime/spindleSpeed"] = cncMachine.SpindleSpeed,
+            ["runtime/spindleSpeed"] = cncMachine.ActualSpindleSpeed,
 
             // STATUS
             ["status/state"] = cncMachine.Status.ToString(),
