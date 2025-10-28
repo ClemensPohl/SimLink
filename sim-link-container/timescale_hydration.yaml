@@ -1,6 +1,3 @@
-# Redpanda Connect (Benthos) configuration
-# Purpose: Read machine telemetry data from Kafka and insert into TimescaleDB
-
 input:
   label: "kafka_in"
   kafka:
@@ -13,7 +10,6 @@ input:
 
 pipeline:
   processors:
-    # Optional sanity cleanup or renaming
     - bloblang: |
         root = {
           "timestamp": this.timestamp.or(timestamp_unix()),
@@ -27,7 +23,6 @@ pipeline:
         }
 
 output:
-  # Insert into TimescaleDB (PostgreSQL driver)
   sql_insert:
     driver: "postgres"
     dsn: "postgres://adm:adm_password@timescaledb_container:5432/adm_db?sslmode=disable"
@@ -57,3 +52,21 @@ output:
 logger:
   level: INFO
   format: logfmt
+
+## SQL Schema for TimescaleDB
+# -- Create table for machine status data
+
+# CREATE TABLE machine_status (
+#     timestamp TIMESTAMPTZ NOT NULL,
+#     machine_status TEXT,
+#     name TEXT,
+#     plant TEXT,
+#     serial_number TEXT,
+#     spindle_speed DOUBLE PRECISION,
+#     phase TEXT,
+#     state TEXT
+# );
+
+# -- Convert to hypertable for TimescaleDB
+# SELECT create_hypertable('machine_status', 'timestamp');
+

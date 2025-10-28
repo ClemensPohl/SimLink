@@ -34,24 +34,28 @@ internal class CncNodeManager : CustomNodeManager2, IDisposable
     {
         var ns = NamespaceIndexes[0];
 
-        var machinesFolder = new BaseObjectState(null)
+        foreach(var machine in _machines)
         {
-            SymbolicName = "CncMachine",
-            NodeId = new NodeId("CncMachine", ns),
-            BrowseName = new QualifiedName("CncMachine", ns),
-            DisplayName = "CNC Machine",
-            TypeDefinitionId = ObjectTypeIds.BaseObjectType
-        };
-        AddPredefinedNode(SystemContext, machinesFolder);
+            var machinesFolder = new BaseObjectState(null)
+            {
+                SymbolicName = $"CncMachine - {machine.SerialNumber}",
+                NodeId = new NodeId($"CncMachine.{machine.SerialNumber}", ns),
+                BrowseName = new QualifiedName($"CncMachine - {machine.SerialNumber}", ns),
+                DisplayName = "CNC Machine - " + machine.SerialNumber,
+                TypeDefinitionId = ObjectTypeIds.BaseObjectType
+            };
+            AddPredefinedNode(SystemContext, machinesFolder);
 
-        if (!externalReferences.TryGetValue(ObjectIds.ObjectsFolder, out var refs))
-            externalReferences[ObjectIds.ObjectsFolder] = refs = new List<IReference>();
-        if (!refs.Any(r => r.TargetId == machinesFolder.NodeId))
-            refs.Add(new NodeStateReference(ReferenceTypeIds.Organizes, false, machinesFolder.NodeId));
+            if (!externalReferences.TryGetValue(ObjectIds.ObjectsFolder, out var refs))
+                externalReferences[ObjectIds.ObjectsFolder] = refs = new List<IReference>();
+            if (!refs.Any(r => r.TargetId == machinesFolder.NodeId))
+                refs.Add(new NodeStateReference(ReferenceTypeIds.Organizes, false, machinesFolder.NodeId));
+
+            
+            CreateNodesFromObject(machine, machinesFolder, ns);
+        }
 
 
-
-        CreateNodesFromObject(_machines.First(), machinesFolder, ns);
     }
 
     private void CreateNodesFromObject(object source, BaseObjectState parent, ushort ns)
