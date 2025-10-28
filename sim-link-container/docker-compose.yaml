@@ -123,3 +123,44 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+
+## timescale db
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: timescaledb_container
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=adm
+      - POSTGRES_PASSWORD=adm_password
+      - POSTGRES_DB=adm_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./timescaledb-data:/var/lib/postgresql/data
+    networks:
+      - adm_live_demo
+    logging:
+        driver: "json-file"
+        options:
+          max-size: "10m"
+          max-file: "3"
+  
+  timescaledb_hydration:
+    image: docker.redpanda.com/redpandadata/connect:latest
+    container_name: timescaledb_hydration
+    restart: unless-stopped
+    depends_on:
+      - mqtt
+      - kafka_broker
+      - timescaledb
+    networks:
+      - adm_live_demo
+    volumes:
+      - ./timescale_hydration.yaml:/connect.yaml
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

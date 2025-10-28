@@ -1,0 +1,59 @@
+# Redpanda Connect (Benthos) configuration
+# Purpose: Read machine telemetry data from Kafka and insert into TimescaleDB
+
+input:
+  label: "kafka_in"
+  kafka:
+    addresses:
+      - kafka_broker:9092
+    topics:
+      - "opcua.machines.status"
+    consumer_group: "timescaledb_hydration"
+    start_from_oldest: true
+
+pipeline:
+  processors:
+    # Optional sanity cleanup or renaming
+    - bloblang: |
+        root = {
+          "timestamp": this.timestamp.or(timestamp_unix()),
+          "machine_status": this.machine_status.or("unknown"),
+          "name": this.name.or("unknown"),
+          "plant": this.plant.or("unknown"),
+          "serial_number": this.serial_number.or("unknown"),
+          "spindle_speed": this.spindle_speed.or(0),
+          "phase": this.phase.or("unknown"),
+          "state": this.state.or("unknown")
+        }
+
+output:
+  # Insert into TimescaleDB (PostgreSQL driver)
+  sql_insert:
+    driver: "postgres"
+    dsn: "postgres://adm:adm_password@timescaledb_container:5432/adm_db?sslmode=disable"
+    table: "machine_status"
+    columns:
+      - timestamp
+      - machine_status
+      - name
+      - plant
+      - serial_number
+      - spindle_speed
+      - phase
+      - state
+    # args_mapping defines how to build the VALUES array for insertion
+    args_mapping: |
+      root = [
+        this.timestamp,
+        this.machine_status,
+        this.name,
+        this.plant,
+        this.serial_number,
+        this.spindle_speed,
+        this.phase,
+        this.state
+      ]
+
+logger:
+  level: INFO
+  format: logfmt
